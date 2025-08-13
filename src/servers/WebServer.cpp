@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jmeirele <jmeirele@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/24 17:15:20 by meferraz          #+#    #+#             */
-/*   Updated: 2025/08/11 17:24:45 by jmeirele         ###   ########.fr       */
+/*   Updated: 2025/08/13 10:55:41 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,7 @@ void WebServer::runEventLoop()
 {
 	while (!_stopFlag) {
 		// SINGLE POLL CALL - evaluation requirement
-		int ready = poll(pollFds.data(), pollFds.size(), -1);
+		int ready = poll(&pollFds[0], pollFds.size(), -1); // C++98: usar &pollFds[0] em vez de .data()
 
 		if (ready < 0) {
 			// NO ERRNO CHECKING - evaluation requirement
@@ -92,20 +92,21 @@ void WebServer::runEventLoop()
 		handlePollEvents(newConnections, toRemove, pollFds);
 
 		// Add new connections
-		for (size_t i = 0; i < newConnections.size(); ++i) {
+		size_t i;
+		for (i = 0; i < newConnections.size(); ++i) {
 			pollFds.push_back(newConnections[i]);
 		}
 
 		// Remove closed connections (in reverse order)
-		for (int i = toRemove.size() - 1; i >= 0; --i) {
-			size_t index = toRemove[i];
+		for (int j = (int)toRemove.size() - 1; j >= 0; --j) {
+			size_t index = toRemove[j];
 			int fd = pollFds[index].fd;
 
 			// Remove from server if it's a client
 			if (serverFdsSet.find(fd) == serverFdsSet.end()) {
-				// Find which server owns this client
-				for (size_t j = 0; j < servers.size(); ++j) {
-					servers[j]->removeClient(fd);
+				size_t k;
+				for (k = 0; k < servers.size(); ++k) {
+					servers[k]->removeClient(fd);
 				}
 			}
 

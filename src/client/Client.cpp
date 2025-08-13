@@ -6,7 +6,7 @@
 /*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/04 21:19:42 by jmeirele          #+#    #+#             */
-/*   Updated: 2025/08/12 16:57:37 by meferraz         ###   ########.fr       */
+/*   Updated: 2025/08/13 11:15:18 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,42 +33,44 @@ int Client::getFd() const { return _fd; }
 const std::string& Client::getClientAddress() const { return _clientAddress; }
 bool Client::isClientClosed() const { return _closed; }
 
+// Helper to extract Content-Length from buffer
+size_t Client::_getContentLength() const
+{
+	size_t clPos = _readBuffer.find("Content-Length:");
+	if (clPos != std::string::npos)
+	{
+		size_t lineEnd = _readBuffer.find("\r\n", clPos);
+		std::string clStr = _readBuffer.substr(clPos + 15, lineEnd - (clPos + 15));
+		// Validate that clStr is a number
+		for (size_t i = 0; i < clStr.size(); ++i)
+			if (!std::isdigit(clStr[i])) return 0;
+		return std::atoi(clStr.c_str());
+	}
+	return 0;
+}
+
 bool Client::_hasCompleteRequest() const
 {
 	size_t headerEnd = _readBuffer.find("\r\n\r\n");
 	if (headerEnd == std::string::npos)
 		return false;
 
-	size_t contentLength = 0;
-	size_t clPos = _readBuffer.find("Content-Length:");
-	if (clPos != std::string::npos)
-	{
-		size_t lineEnd = _readBuffer.find("\r\n", clPos);
-		std::string clStr = _readBuffer.substr(clPos + 15, lineEnd - (clPos + 15));
-		contentLength = std::atoi(clStr.c_str());
-	}
-
+	size_t contentLength = _getContentLength();
 	return _readBuffer.size() >= headerEnd + 4 + contentLength;
 }
 
 bool Client::handleClientRequest()
 {
 	// 1. Early body-size check before reading more data
-	size_t clPos = _readBuffer.find("Content-Length:");
-	if (clPos != std::string::npos)
+	size_t contentLength = _getContentLength();
+	if (contentLength > 0 && contentLength > _config.getClientMaxBodySize())
 	{
-		size_t lineEnd = _readBuffer.find("\r\n", clPos);
-		size_t contentLength = std::atoi(
-			_readBuffer.substr(clPos + 15, lineEnd - clPos - 15).c_str()
-		);
-		if (contentLength > _config.getClientMaxBodySize())
-		{
-			Response resp;
-			HttpStatus::buildResponse(_config, resp, 413);
-			_writeBuffer = resp.toString();
-			_readBuffer.clear();
-			return true;  // schedule send of 413 immediately
-		}
+		Logger::warn("Request body too large from: " + _clientAddress);
+		Response resp;
+		HttpStatus::buildResponse(_config, resp, 413);
+		_writeBuffer = resp.toString();
+		_readBuffer.clear();
+		return true;  // schedule send of 413 immediately
 	}
 
 	// 2. Now read incoming data

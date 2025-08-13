@@ -6,12 +6,13 @@
 /*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/04 20:55:24 by jmeirele          #+#    #+#             */
-/*   Updated: 2025/08/12 13:22:57 by meferraz         ###   ########.fr       */
+/*   Updated: 2025/08/13 11:17:19 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ClientManager.hpp"
 
+// Converts an integer to string (for logging)
 static std::string intToString(int value)
 {
 	std::ostringstream oss;
@@ -23,6 +24,7 @@ ClientManager::ClientManager(){}
 
 ClientManager::~ClientManager(){}
 
+// Accepts a new client connection and sets it non-blocking
 int ClientManager::acceptNewClient(int serverFd, const ServerConfig &config)
 {
 	struct sockaddr_in clientAddr;
@@ -30,20 +32,20 @@ int ClientManager::acceptNewClient(int serverFd, const ServerConfig &config)
 	int clientFd = accept(serverFd, (struct sockaddr*)&clientAddr, &clientAddrSize);
 
 	if (clientFd < 0) {
-		Logger::error("accept() failed.");
+		Logger::error("accept() failed (could not accept new client).");
 		return -1;
 	}
 
 	// Set clientFd non-blocking
 	int flags = fcntl(clientFd, F_GETFL, 0);
 	if (flags < 0) {
-		Logger::error("fcntl(F_GETFL) failed.");
+		Logger::error("fcntl(F_GETFL) failed (could not get flags for client socket).");
 		close(clientFd);
 		return -1;
 	}
 
 	if (fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) < 0) {
-		Logger::error("fcntl(F_SETFL) failed.");
+		Logger::error("fcntl(F_SETFL) failed (could not set client socket non-blocking).");
 		close(clientFd);
 		return -1;
 	}
@@ -55,6 +57,7 @@ int ClientManager::acceptNewClient(int serverFd, const ServerConfig &config)
 	return clientFd;
 }
 
+// Handles I/O events for a client socket
 bool ClientManager::handleClientIO(int fd, short revents)
 {
 	if (_clients.find(fd) == _clients.end()) {
@@ -62,7 +65,6 @@ bool ClientManager::handleClientIO(int fd, short revents)
 	}
 
 	Client* client = _clients[fd];
-
 	bool keepConnection = true;
 
 	// Handle POLLIN (data available to read)
@@ -81,6 +83,7 @@ bool ClientManager::handleClientIO(int fd, short revents)
 
 	// Handle POLLHUP (connection hung up by peer)
 	if (revents & POLLHUP) {
+		Logger::info("Client hang up detected: " + intToString(fd));
 		keepConnection = false; // Peer closed connection, mark for closure
 	}
 
@@ -93,16 +96,20 @@ bool ClientManager::handleClientIO(int fd, short revents)
 	return keepConnection;
 }
 
+// Removes and cleans up a client connection
 void ClientManager::removeClient(int fd)
 {
 	if (_clients.find(fd) != _clients.end()) {
 		delete _clients[fd];
 		_clients.erase(fd);
-		close(fd);
-		Logger::info("Client disconnected: " + intToString(fd));
+		if (close(fd) != 0)
+			Logger::warn("Failed to close client socket: " + intToString(fd));
+		else
+			Logger::info("Client disconnected: " + intToString(fd));
 	}
 }
 
+// Returns a pointer to the client object for a given fd, or NULL if not found
 Client *ClientManager::getClient(int fd) const
 {
 	std::map<int, Client *>::const_iterator it = _clients.find(fd);
@@ -112,12 +119,14 @@ Client *ClientManager::getClient(int fd) const
 	return NULL;
 }
 
+// Cleans up all clients (called on shutdown)
 void ClientManager::cleanup()
 {
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
 	{
 		delete it->second;
-		close(it->first);
+		if (close(it->first) != 0)
+			Logger::warn("Failed to close client socket: " + intToString(it->first));
 	}
 	_clients.clear();
 	Logger::info("All clients cleaned up.");

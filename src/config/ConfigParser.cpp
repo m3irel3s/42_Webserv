@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jmeirele <jmeirele@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/06 16:50:07 by meferraz          #+#    #+#             */
-/*   Updated: 2025/08/11 17:03:01 by jmeirele         ###   ########.fr       */
+/*   Updated: 2025/08/13 11:28:30 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -360,7 +360,7 @@ void ConfigParser::_handleErrorPage(const std::string& args,
 	cfg.setErrorPage(code, path);
 }
 
-void ConfigParser::_handleServerAutoIndex(const std::string &args, 
+void ConfigParser::_handleServerAutoIndex(const std::string &args,
 									ServerConfig &cfg, int lineNum)
 {
 	if (args == "on")
