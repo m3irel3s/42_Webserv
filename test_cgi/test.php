@@ -70,8 +70,8 @@ echo "Content-Type: text/html\r\n\r\n";
 			</thead>
 			<tbody>
 <?php
-reset($_SERVER);
-while (list($key, $value) = each($_SERVER)) {
+foreach ($_SERVER as $key => $value)
+{
 	printf('<tr><td>%s</td><td>%s</td></tr>', htmlspecialchars($key), htmlspecialchars($value));
 }
 ?>
