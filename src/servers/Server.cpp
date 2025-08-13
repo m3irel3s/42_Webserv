@@ -193,10 +193,8 @@ void Server::cleanup()
 	{
 		if (*it >= 0)
 		{
-			if (close(*it) == 0)
-				Logger::info("Closed socket FD: " + intToString(*it));
-			else
-				Logger::error("Failed to close socket FD: " + intToString(*it));
+			close(*it);
+			Logger::info("Closed socket FD: " + intToString(*it));
 		}
 	}
 	serverFds.clear();
