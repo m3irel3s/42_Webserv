@@ -6,7 +6,7 @@
 /*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/03 19:30:10 by jmeirele          #+#    #+#             */
-/*   Updated: 2025/08/12 13:19:00 by meferraz         ###   ########.fr       */
+/*   Updated: 2025/08/13 10:59:20 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,11 +16,7 @@ Server::Server(const ServerConfig &config) : config(config) {}
 
 Server::~Server()
 {
-	for (std::vector<int>::iterator it = serverFds.begin();
-		it != serverFds.end(); ++it)
-	{
-		if (*it > 0) close(*it);
-	}
+	cleanup();
 }
 
 bool Server::setup()
@@ -33,8 +29,8 @@ bool Server::setup()
 		return false;
 	}
 
-	for (std::map<std::string, ListenConfig>::const_iterator it = listens.begin();
-		it != listens.end(); ++it)
+	std::map<std::string, ListenConfig>::const_iterator it;
+	for (it = listens.begin(); it != listens.end(); ++it)
 	{
 		const std::string& ip = it->second.getIp();
 		int port = it->second.getPort();
@@ -192,7 +188,8 @@ std::string Server::intToString(int value) const
 
 void Server::cleanup()
 {
-	for (std::vector<int>::iterator it = serverFds.begin(); it != serverFds.end(); ++it)
+	std::vector<int>::iterator it;
+	for (it = serverFds.begin(); it != serverFds.end(); ++it)
 	{
 		if (*it >= 0)
 		{

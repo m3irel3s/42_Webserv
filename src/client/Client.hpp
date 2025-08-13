@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jmeirele <jmeirele@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/04 17:01:17 by jmeirele          #+#    #+#             */
-/*   Updated: 2025/08/11 17:02:48 by jmeirele         ###   ########.fr       */
+/*   Updated: 2025/08/13 11:15:13 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,4 +45,5 @@ class Client
 		const ServerConfig &_config;
 
 		bool _hasCompleteRequest() const;
+		size_t _getContentLength() const;
 };

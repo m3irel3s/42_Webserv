@@ -6,7 +6,7 @@
 /*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/16 11:33:32 by meferraz          #+#    #+#             */
-/*   Updated: 2025/08/12 16:56:53 by meferraz         ###   ########.fr       */
+/*   Updated: 2025/08/13 11:13:40 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,6 +135,7 @@ void CgiHandler::_initEnv()
 	}
 }
 
+// Create environment array for execve
 char** CgiHandler::_createEnvArray() const
 {
 	char** env = new char*[_env.size() + 1];
@@ -152,6 +153,7 @@ char** CgiHandler::_createEnvArray() const
 	return env;
 }
 
+// Free environment array
 void CgiHandler::_cleanupEnvArray(char** env) const
 {
 	for (int i = 0; env[i]; i++) {
@@ -183,6 +185,7 @@ void CgiHandler::_execScript(const std::string& scriptPath, char** env)
 {
 	char* absolutePath = realpath(scriptPath.c_str(), NULL);
 	if (!absolutePath) {
+		std::cerr << "realpath failed for script: " << scriptPath << std::endl;
 		_exit(EXIT_FAILURE);
 	}
 
@@ -192,6 +195,7 @@ void CgiHandler::_execScript(const std::string& scriptPath, char** env)
 	// Extract extension
 	size_t dotPos = absScriptPath.find_last_of('.');
 	if (dotPos == std::string::npos) {
+		std::cerr << "No extension found in script: " << absScriptPath << std::endl;
 		_exit(EXIT_FAILURE);
 	}
 	std::string extension = absScriptPath.substr(dotPos);
@@ -200,6 +204,7 @@ void CgiHandler::_execScript(const std::string& scriptPath, char** env)
 	const std::map<std::string, std::string>& cgis = _location.getCgis();
 	std::map<std::string, std::string>::const_iterator it = cgis.find(extension);
 	if (it == cgis.end()) {
+		std::cerr << "No CGI interpreter for extension: " << extension << std::endl;
 		_exit(EXIT_FAILURE);
 	}
 	std::string interpreter = it->second;
@@ -214,6 +219,7 @@ void CgiHandler::_execScript(const std::string& scriptPath, char** env)
 	std::cout << "Executing CGI script: " << absScriptPath << std::endl;
 
 	execve(interpreter.c_str(), argv, env);
+	std::cerr << "execve failed for: " << interpreter << std::endl;
 	_exit(EXIT_FAILURE); // Should not reach here
 }
 

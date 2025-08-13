@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jmeirele <jmeirele@student.42porto.com>    +#+  +:+       +#+        */
+/*   By: meferraz <meferraz@student.42porto.pt>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/06 16:28:01 by meferraz          #+#    #+#             */
-/*   Updated: 2025/08/11 17:03:28 by jmeirele         ###   ########.fr       */
+/*   Updated: 2025/08/13 11:10:44 by meferraz         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ LocationConfig::LocationConfig() :
 
 LocationConfig::~LocationConfig() {}
 
+// Validate that the location path is not empty and starts with '/'
 void LocationConfig::_validatePath(const std::string& path) const
 {
 	if (path.empty()) {
@@ -31,6 +32,7 @@ void LocationConfig::_validatePath(const std::string& path) const
 	}
 }
 
+// Validate that the HTTP method is one of the allowed ones
 void LocationConfig::_validateMethod(const std::string& method) const
 {
 	const std::string validMethods[] = {"GET", "POST", "DELETE"};
@@ -45,6 +47,7 @@ void LocationConfig::_validateMethod(const std::string& method) const
 	throw std::runtime_error("Invalid HTTP method: " + method);
 }
 
+// Validate that the CGI extension starts with '.' and contains only valid characters
 void LocationConfig::_validateExtension(const std::string& ext) const
 {
 	if (ext.empty() || ext[0] != '.') {
@@ -58,6 +61,7 @@ void LocationConfig::_validateExtension(const std::string& ext) const
 	}
 }
 
+// Validate that the redirect status code is in the correct range
 void LocationConfig::_validateStatusCode(int code) const
 {
 	if (code < 300 || code > 599) {
@@ -68,12 +72,14 @@ void LocationConfig::_validateStatusCode(int code) const
 	}
 }
 
+// Set the location path after validation
 void LocationConfig::setPath(const std::string& p)
 {
 	_validatePath(p);
 	_path = p;
 }
 
+// Set the root path after validation
 void LocationConfig::setRoot(const std::string& r)
 {
 	if (r.empty()) {
@@ -82,24 +88,35 @@ void LocationConfig::setRoot(const std::string& r)
 	_root = r;
 }
 
+// Add an index file, avoiding duplicates and validating input
 void LocationConfig::addIndex(const std::string& idx)
 {
 	if (idx.empty()) {
 		throw std::runtime_error("Index file name cannot be empty");
 	}
+	// Avoid duplicates
+	for (std::vector<std::string>::const_iterator it = _indexes.begin();
+		it != _indexes.end(); ++it)
+	{
+		if (*it == idx) {
+			return;
+		}
+	}
 	_indexes.push_back(idx);
 }
 
+// Enable or disable autoindex
 void LocationConfig::setAutoIndex(bool a)
 {
 	_autoindex = a;
 }
 
+// Add an allowed HTTP method, avoiding duplicates and validating input
 void LocationConfig::addAllowedMethod(const std::string& m)
 {
 	_validateMethod(m);
 
-	// Check for duplicates
+	// Avoid duplicates
 	for (std::vector<std::string>::const_iterator it = _allowed_methods.begin();
 		it != _allowed_methods.end(); ++it)
 	{
@@ -110,6 +127,7 @@ void LocationConfig::addAllowedMethod(const std::string& m)
 	_allowed_methods.push_back(m);
 }
 
+// Add a redirect, validating status code and target
 void LocationConfig::addRedirect(int code, const std::string& target)
 {
 	_validateStatusCode(code);
@@ -120,6 +138,7 @@ void LocationConfig::addRedirect(int code, const std::string& target)
 	_redirects[code] = target;
 }
 
+// Add a CGI handler, validating extension and path
 void LocationConfig::addCgi(const std::string& ext, const std::string& cgi_path)
 {
 	_validateExtension(ext);
@@ -130,14 +149,23 @@ void LocationConfig::addCgi(const std::string& ext, const std::string& cgi_path)
 	_cgis[ext] = cgi_path;
 }
 
+// Set the list of index files, validating all entries and avoiding empty names
 void LocationConfig::setIndexes(const std::vector<std::string>& indexes)
 {
 	if (indexes.empty()) {
 		throw std::runtime_error("Index list cannot be empty");
 	}
+	for (std::vector<std::string>::const_iterator it = indexes.begin();
+		it != indexes.end(); ++it)
+	{
+		if (it->empty()) {
+			throw std::runtime_error("Index file name in list cannot be empty");
+		}
+	}
 	_indexes = indexes;
 }
 
+// Getters
 const std::string& LocationConfig::getPath() const { return _path; }
 const std::string& LocationConfig::getRoot() const { return _root; }
 const std::vector<std::string>& LocationConfig::getIndexes() const { return _indexes; }
@@ -146,6 +174,7 @@ const std::vector<std::string>& LocationConfig::getAllowedMethods() const { retu
 const std::map<int, std::string>& LocationConfig::getRedirects() const { return _redirects; }
 const std::map<std::string, std::string>& LocationConfig::getCgis() const { return _cgis; }
 
+// Inherit missing values from the server config
 LocationConfig LocationConfig::inheritFromServer(const ServerConfig& server) const
 {
 	LocationConfig result = *this;
