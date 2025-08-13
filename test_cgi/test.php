@@ -69,23 +69,28 @@ echo "Content-Type: text/html\r\n\r\n";
 				<tr><th>Variable</th><th>Value</th></tr>
 			</thead>
 			<tbody>
-			<?php foreach ($_SERVER as $key => $value): ?>
-				<tr>
-					<td><?php echo htmlspecialchars($key); ?></td>
-					<td><?php echo htmlspecialchars($value); ?></td>
-				</tr>
-			<?php endforeach; ?>
+<?php
+reset($_SERVER);
+while (list($key, $value) = each($_SERVER)) {
+	printf('<tr><td>%s</td><td>%s</td></tr>', htmlspecialchars($key), htmlspecialchars($value));
+}
+?>
 			</tbody>
 		</table>
 	</div>
 	<?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && count($_POST)): ?>
-		<h3>Parsed POST Fields</h3>
-		<ul>
-		<?php foreach ($_POST as $k => $v): ?>
-			<li><b><?php echo htmlspecialchars($k); ?></b>: <?php echo htmlspecialchars($v); ?></li>
-		<?php endforeach; ?>
-		</ul>
-	<?php endif; ?>
+	<h3>Parsed POST Fields</h3>
+	<ul>
+	<?php
+	$keys = array_keys($_POST);
+	for ($i = 0; $i < count($keys); $i++) {
+		$k = $keys[$i];
+		$v = $_POST[$k];
+		echo '<li><b>' . htmlspecialchars($k) . '</b>: ' . htmlspecialchars($v) . '</li>';
+	}
+	?>
+	</ul>
+<?php endif; ?>
 </div>
 </body>
 </html>
